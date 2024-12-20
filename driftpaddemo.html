@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriftPad Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Doto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Doto', sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .editor-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .text-area {
+            width: 100%;
+            max-width: 800px;
+            height: 70vh;
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid #404040;
+            border-radius: 10px;
+            color: #ffffff;
+            padding: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+        }
+
+        .text-area:focus {
+            outline: none;
+            border-color: #9370DB;
+            box-shadow: 0 0 10px rgba(147, 112, 219, 0.3);
+        }
+
+        /* Override navbar styles for demo page */
+        .navbar {
+            position: relative;
+            background: rgba(26, 26, 26, 0.95);
+            border-bottom: 1px solid #404040;
+        }
+
+        .footer {
+            padding: 12px 20px;
+            color: #808080;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(45, 45, 45, 0.5);
+            backdrop-filter: blur(10px);
+            margin: 0 15px 15px 15px;
+            border-radius: 10px;
+            border: 1px solid #404040;
+            font-size: 14px;
+            font-family: 'Lucida Console', Monaco, monospace;
+        }
+
+        .font-size-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(45, 45, 45, 0.9);
+            color: #ffffff;
+            border-radius: 10px;
+            border: 1px solid #404040;
+            padding: 8px 16px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            font-family: 'Lucida Console', Monaco, monospace;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .controls a {
+            color: #808080;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+
+        .controls a:hover {
+            color: #9370DB;
+            background: rgba(147, 112, 219, 0.1);
+        }
+
+        ::selection {
+            background: rgba(147, 112, 219, 0.3);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo"><a href="index.html" style="text-decoration: none; color: transparent;">DriftBR</a></div>
+            <div class="nav-links">
+                <a href="index.html" class="cta-button">Return to DriftBR</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="editor-container">
+        <textarea class="text-area" spellcheck="false" placeholder="Start typing..."></textarea>
+    </div>
+    <div class="footer">
+        <span>Line: <span id="line-number">1</span></span>
+        <div class="controls">
+            <a onclick="document.execCommand('copy')">Copy</a>
+            <a onclick="document.execCommand('paste')">Paste</a>
+            <a onclick="document.execCommand('selectAll')">Select All</a>
+        </div>
+    </div>
+    <div class="font-size-popup">Font Size: <span id="font-size">24px</span></div>
+
+    <script>
+        const editor = document.querySelector('.text-area');
+        const lineNumberDisplay = document.getElementById('line-number');
+        const fontSizePopup = document.querySelector('.font-size-popup');
+        const fontSizeDisplay = document.getElementById('font-size');
+
+        function highlightCurrentLine() {
+            const lines = editor.value.substr(0, editor.selectionStart).split('\n');
+            const currentLineNumber = lines.length;
+            lineNumberDisplay.textContent = currentLineNumber;
+        }
+
+        function showFontSizePopup() {
+            fontSizePopup.style.opacity = '1';
+            setTimeout(() => fontSizePopup.style.opacity = '0', 1000);
+        }
+
+        editor.addEventListener('keyup', highlightCurrentLine);
+        editor.addEventListener('click', highlightCurrentLine);
+        editor.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                const fontSize = parseInt(getComputedStyle(editor).fontSize);
+                const delta = e.deltaY > 0 ? -2 : 2;
+                const newSize = Math.max(12, Math.min(72, fontSize + delta));
+                editor.style.fontSize = newSize + 'px';
+                fontSizeDisplay.textContent = newSize + 'px';
+                showFontSizePopup();
+            }
+        });
+
+        // Auto-save functionality
+        const AUTOSAVE_INTERVAL = 1000; // 1 second
+        let lastContent = editor.value;
+
+        setInterval(() => {
+            if (editor.value !== lastContent) {
+                lastContent = editor.value;
+                localStorage.setItem('driftpad_content', editor.value);
+            }
+        }, AUTOSAVE_INTERVAL);
+
+        // Load saved content
+        window.addEventListener('load', () => {
+            const savedContent = localStorage.getItem('driftpad_content');
+            if (savedContent) {
+                editor.value = savedContent;
+                highlightCurrentLine();
+            }
+        });
+    </script>
+</body>
+</html>
